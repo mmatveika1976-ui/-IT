@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Книга приключений — три игры</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;color:white;font-family:'Trebuchet MS',Arial,sans-serif;background:#031841 url(concept.png) center/cover fixed}body:before{content:'';position:fixed;inset:0;background:linear-gradient(#03164466,#03164499);z-index:-1}button{font:inherit;cursor:pointer}button:focus-visible{outline:4px solid #ffdf72;outline-offset:4px}nav{display:flex;justify-content:center;gap:35px;padding:22px;background:#072765aa;border-radius:0 0 25px 25px;width:fit-content;margin:auto}nav a{color:white;text-decoration:none;font-weight:bold}nav a:first-child{border-bottom:3px solid #ffc940;padding-bottom:8px}main{max-width:1200px;margin:auto;padding:20px 30px 40px;text-align:center}h1{font-size:clamp(38px,6vw,80px);letter-spacing:-2px;margin:12px 0;color:#fff;text-shadow:0 4px #174bae,0 8px #00144c,0 10px 25px #001034}h1 span{color:#ffcf42}.ribbon{display:table;margin:18px auto 32px;padding:10px 30px;color:#06205c;background:#a5efff;font-size:clamp(14px,2vw,22px);font-weight:bold;border-radius:50% 15% / 20%;box-shadow:0 5px #12a8d7}.book{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:22px 24px 35px;border:3px solid #ffdda1;border-radius:50px 50px 25px 25px;background:linear-gradient(95deg,#ffe3a4,#fff4d5 31%,#d3a366 33%,#fff4d5 35%,#fff4d5 64%,#d3a366 66%,#fff4d5 68%,#ffe3a4);box-shadow:0 7px #c68c4d,0 13px #90502e,0 20px #38172e,0 30px 45px #0009}.card{isolation:isolate;position:relative;min-width:0;height:450px;border:2px solid #dba85d;border-radius:35px 35px 22px 22px;overflow:hidden;color:white;background:#054f6a;padding:0;transition:transform .2s,box-shadow .2s}.card:hover{transform:translateY(-6px);box-shadow:0 10px 25px #58330b66}.art{position:absolute;inset:0;width:100%;height:100%;z-index:-2}.card:after{content:'';position:absolute;inset:0;background:linear-gradient(transparent 35%,#00224766 55%,#001b39ee);z-index:-1}.info{position:absolute;bottom:20px;left:16px;right:16px}.tag{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#fff0bd}h2{font-size:clamp(25px,3vw,38px);line-height:1.05;margin:10px 0;text-shadow:0 3px #07397e,2px 0 #07397e,-2px 0 #07397e}.card:first-child h2{color:#ffce48}.description{font-size:14px;line-height:1.5;margin:10px 0 18px}.play{display:block;border:2px solid #c7ffd2;border-radius:40px;background:linear-gradient(#4ce47b,#00a341 65%,#007b34);box-shadow:0 0 15px #c2ffae88,inset 0 3px 4px #fff9;padding:12px;font-size:24px;font-weight:bold}.card:nth-child(2) .play{background:linear-gradient(#4bceff,#0877ff 65%,#0349d5);border-color:#b9eeff}.card:nth-child(3) .play{background:linear-gradient(#41eabd,#00ab91 65%,#007663)}footer{margin-top:40px;color:#e4eaff;font-size:14px}dialog{width:min(600px,94vw);max-height:90vh;overflow:auto;border:2px solid #eac98a;border-radius:25px;background:linear-gradient(145deg,#123d65,#061c39);color:white;padding:25px;box-shadow:0 25px 90px #0009}dialog::backdrop{background:#000b;backdrop-filter:blur(7px)}.head{display:flex;align-items:center;justify-content:space-between;gap:15px}.head h2{font-size:27px}.close,.restart,.answer{background:#244c75;color:white;border:1px solid #729ec6;border-radius:12px;padding:12px 18px}.close{font-size:22px}#hint{color:#cce5ff;line-height:1.6}#board{display:grid;gap:10px;margin:22px auto}.tile{aspect-ratio:1;min-width:0;background:linear-gradient(140deg,#356693,#153954);border:1px solid #88b6d0;border-radius:12px;color:#ffe3a1;font-size:32px}.tile:disabled{opacity:1;cursor:default}.tile.matched{background:#167769}.answer{text-align:left;font-size:17px}.answer:disabled{opacity:.8;cursor:default}.answer.correct{background:#167769}.answer.wrong{background:#933f53}#status{min-height:45px;font-weight:bold;color:#ffe1a0;line-height:1.5}.restart{background:#d8ad59;color:#16283d;font-weight:bold}#question{line-height:1.5;font-size:20px}@media(max-width:760px){nav{gap:22px;padding:16px;font-size:14px}main{padding:20px 16px 35px}.book{grid-template-columns:1fr;max-width:430px;margin:auto;padding:16px;gap:20px;background:#ffedc7;border-radius:30px}.card{height:430px}h2{font-size:36px}.ribbon{padding:10px 16px}body{background-position:center}footer{line-height:1.8}}
+</style>
+</head>
+<body>
+<nav aria-label="Навигация"><a href="#games">✦ Игры</a><a href="#about">О коллекции</a></nav>
+<main><h1><span>Книга</span> приключений</h1><p class="ribbon">Маленькие игры · Большие приключения!</p>
+<section class="book" id="games" aria-label="Выбери приключение">
+<button class="card" data-game="treasure"><svg class="art" viewBox="275 325 350 430" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><image href="concept.png" width="1671" height="941"/></svg><span class="info"><span class="tag">01 · Тайны джунглей</span><h2>Остров<br>сокровищ</h2><span class="description" style="display:block">Исследуй остров и найди три сундука.</span><span class="play">▶ Играть</span></span></button>
+<button class="card" data-game="world"><svg class="art" viewBox="680 325 335 430" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><image href="concept.png" width="1671" height="941"/></svg><span class="info"><span class="tag">02 · Удивительные открытия</span><h2>Вокруг<br>света</h2><span class="description" style="display:block">Угадай страну и собери пять открытий.</span><span class="play">▶ Играть</span></span></button>
+<button class="card" data-game="ocean"><svg class="art" viewBox="1050 325 345 430" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><image href="concept.png" width="1671" height="941"/></svg><span class="info"><span class="tag">03 · Подводное волшебство</span><h2>Друзья<br>океана</h2><span class="description" style="display:block">Найди пары морских обитателей.</span><span class="play">▶ Играть</span></span></button>
+</section><footer id="about">Три маленьких приключения для большого воображения.<br><br>Без регистрации · Играй мышью или касанием</footer></main>
+<dialog id="modal" aria-labelledby="title"><div class="head"><h2 id="title"></h2><button class="close" aria-label="Закрыть игру">×</button></div><p id="hint"></p><div id="question"></div><div id="board"></div><p id="status" role="status" aria-live="polite"></p><button class="restart">Начать заново</button></dialog>
+<script>
+const $=s=>document.querySelector(s),modal=$('#modal'),board=$('#board'),status=$('#status');
+let current,timer;
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function tile(label,action){const b=document.createElement('button');b.className='tile';b.textContent=label;b.onclick=()=>action(b);board.append(b);return b}
+function start(type){
+ current=type;clearTimeout(timer);board.replaceChildren();$('#question').textContent='';status.textContent='';board.style.gridTemplateColumns='repeat(4,1fr)';
+ if(type==='treasure')treasure();else if(type==='world')world();else ocean();
+}
+function treasure(){
+ $('#title').textContent='Остров сокровищ';$('#hint').textContent='Найди 3 сундука за 10 раскопок. Стрелка на пустой клетке указывает к ближайшему ненайденному сундуку.';
+ const chests=new Set(shuffle(Array.from({length:16},(_,i)=>i)).slice(0,3));let turns=10,found=0;
+ status.textContent='Раскопок: 10 · Сундуков: 0 / 3';
+ for(let i=0;i<16;i++){const cell=tile('🌴',b=>{
+ b.disabled=true;turns--;
+ if(chests.has(i)){chests.delete(i);found++;b.textContent='💰';b.classList.add('matched');b.setAttribute('aria-label','Найден сундук')}
+ else{const near=[...chests].sort((a,c)=>(Math.abs(a%4-i%4)+Math.abs((a/4|0)-(i/4|0)))-(Math.abs(c%4-i%4)+Math.abs((c/4|0)-(i/4|0))))[0];const dx=near%4-i%4,dy=(near/4|0)-(i/4|0);b.textContent=dy<0?(dx<0?'↖':dx>0?'↗':'↑'):dy>0?(dx<0?'↙':dx>0?'↘':'↓'):(dx<0?'←':'→');b.setAttribute('aria-label','Подсказка: '+b.textContent)}
+ status.textContent=`Раскопок: ${turns} · Сундуков: ${found} / 3`;
+ if(found===3||turns===0){status.textContent=found===3?'Все сокровища найдены! Ты настоящий исследователь!':'Раскопки закончились. Попробуй ещё раз!';[...board.children].forEach((c,j)=>{c.disabled=true;if(chests.has(j)){c.textContent='💰';c.setAttribute('aria-label','Здесь был сундук')}})}
+ });cell.setAttribute('aria-label',`Раскопать клетку ${i+1}`)}
+}
+function world(){
+ $('#title').textContent='Вокруг света';$('#hint').textContent='Пять остановок — пять вопросов. Выбери страну по её достопримечательности.';board.style.gridTemplateColumns='1fr';
+ const questions=shuffle([
+ ['🗼 Где находится Эйфелева башня?','Франция','Италия','Япония'],
+ ['🏯 В какой стране находится гора Фудзи?','Япония','Индия','Китай'],
+ ['🏜️ В какой стране стоят пирамиды Гизы?','Египет','Греция','Мексика'],
+ ['🏛️ Где можно увидеть Колизей?','Италия','Испания','Турция'],
+ ['🕰️ В какой стране находится Биг-Бен?','Великобритания','Германия','Франция']]);let round=0,score=0;
+ function next(){board.replaceChildren();if(round===questions.length){$('#question').textContent='🌍 Путешествие завершено!';status.textContent=`Верных ответов: ${score} из 5. ${score===5?'Все открытия твои!':'Отправляйся ещё раз за новыми знаниями!'}`;return}
+ const q=questions[round];$('#question').textContent=q[0];status.textContent=`Остановка ${round+1} из 5 · Верно: ${score}`;
+ shuffle(q.slice(1)).forEach(answer=>{const b=document.createElement('button');b.className='answer';b.textContent=answer;board.append(b);b.onclick=()=>{[...board.children].forEach(c=>{c.disabled=true;if(c.textContent===q[1])c.classList.add('correct')});if(answer===q[1]){score++;status.textContent='Верно! Следующая остановка…'}else{b.classList.add('wrong');status.textContent='Правильный ответ: '+q[1]}round++;timer=setTimeout(next,1500)}})}next();
+}
+function ocean(){
+ $('#title').textContent='Друзья океана';$('#hint').textContent='Открывай по две карточки. Найди все 6 пар морских друзей.';
+ const cards=shuffle(['🐢','🐬','🐠','🐙','🦀','🐳'].flatMap(v=>[v,v]));let first=null,locked=false,moves=0,pairs=0;
+ status.textContent='Пары: 0 / 6 · Ходы: 0';
+ cards.forEach((value,i)=>{const cell=tile('🐚',b=>{if(locked||b===first)return;b.textContent=value;b.setAttribute('aria-label',value);if(!first){first=b;return}moves++;const a=first;first=null;if(a.textContent===value){a.disabled=b.disabled=true;a.classList.add('matched');b.classList.add('matched');pairs++}else{locked=true;timer=setTimeout(()=>{a.textContent=b.textContent='🐚';a.setAttribute('aria-label','Закрытая карточка');b.setAttribute('aria-label','Закрытая карточка');locked=false},850)}status.textContent=pairs===6?`Все друзья найдены за ${moves} ходов!`:`Пары: ${pairs} / 6 · Ходы: ${moves}`});cell.setAttribute('aria-label',`Открыть карточку ${i+1}`)});
+}
+document.querySelectorAll('[data-game]').forEach(b=>b.onclick=()=>{start(b.dataset.game);modal.showModal()});
+$('.close').onclick=()=>modal.close();modal.addEventListener('close',()=>clearTimeout(timer));$('.restart').onclick=()=>start(current);
+</script>
+</body>
+</html>
