@@ -1,61 +1,76 @@
 'use strict';
-const $ = s => document.querySelector(s);
-const modal = $('#modal'), board = $('#board'), status = $('#status');
-const shuffle = values => { const a = [...values]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a };
-const words = [
- [['key','🔑','ключ'],['map','🗺️','карта'],['book','📖','книга'],['hat','👒','шляпа']],
- [['apple','🍎','яблоко'],['banana','🍌','банан'],['carrot','🥕','морковь'],['bread','🍞','хлеб']],
- [['sun','☀️','солнце'],['moon','🌙','луна'],['star','⭐','звезда'],['tree','🌳','дерево']]
-];
-const phrases = [
- [['Привет!','Hello !'],['Спасибо!','Thank you !'],['До свидания!','Goodbye !']],
- [['Воды, пожалуйста.','Water , please .'],['Мне нужен билет.','I need a ticket .'],['Где автобус?','Where is the bus ?']],
- [['Я хочу яблоко.','I want an apple .'],['Сколько это стоит?','How much is it ?'],['Вы можете мне помочь?','Can you help me ?']]
-];
-const animals = [['fish','🐠','рыба'],['crab','🦀','краб'],['whale','🐳','кит'],['turtle','🐢','черепаха'],['dolphin','🐬','дельфин'],['octopus','🐙','осьминог']];
-const games = {
- treasure:{name:'Treasure Words',icon:'🗝️',description:'Найди картинку по английскому слову. За каждое открытие получаешь монеты.',levels:['Вещи исследователя','Вкусный привал','Природа острова']},
- world:{name:'Travel Talk',icon:'🌍',description:'Собери английскую фразу из слов. Нажми слово в ответе, чтобы вернуть его обратно.',levels:['Первые слова','В дороге','На прогулке']},
- ocean:{name:'Ocean Match',icon:'🐢',description:'Соедини английское название с картинкой животного. Сначала нажми слово, затем картинку.',levels:['3 морских друга','4 морских друга','6 морских друзей']}
+const $=s=>document.querySelector(s), modal=$('#game');
+const config={
+greetings:{title:'Hello, friend!',topic:'Приветствие · Знакомство · Прощание',hero:'Финн · твой новый друг',note:'Давай поговорим!',total:8},
+numbers:{title:'Star collector',topic:'Счёт от 1 до 10',hero:'Бип · исследователь звёзд',note:'Каждая звезда на счету!',total:10},
+colors:{title:'Color magic',topic:'Цвета на английском',hero:'Луми · художник сада',note:'Раскрасим этот мир!',total:10}
 };
-let progress = {}, saving = true, current = '', state = null;
-try { const saved=JSON.parse(localStorage.getItem('english-adventures-v1')||'{}'); if(saved && typeof saved==='object' && !Array.isArray(saved)) progress=saved } catch {saving=false}
-function record(id){const v=progress[id];return v && typeof v==='object' && !Array.isArray(v)?v:{}}
-function savedLevel(id,level){const v=record(id)[level];return v && Number.isFinite(v.stars) && Number.isFinite(v.score)?v:null}
-function save(){try{localStorage.setItem('english-adventures-v1',JSON.stringify(progress))}catch{saving=false}}
-function btn(text,action,cls='answer'){const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=text;b.onclick=action;return b}
-function speak(text){if(!('speechSynthesis' in window))return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.8;window.speechSynthesis.speak(u)}
-function stop(){state=null;if('speechSynthesis' in window)window.speechSynthesis.cancel()}
-function clean(){board.replaceChildren();board.className='';$('#question').replaceChildren();$('#actions').replaceChildren();status.textContent='';$('#meter').hidden=true}
-function refreshLibrary(){Object.keys(games).forEach(id=>{const el=document.querySelector(`[data-game="${id}"] .description`);const done=[0,1,2].filter(n=>savedLevel(id,n)).length;el.textContent=done?`${done} / 3 levels complete · Play again`:({treasure:'Find the word. Collect the treasure.',world:'Build a phrase. Start a journey.',ocean:'Match the words. Meet ocean friends.'})[id]})}
-function menu(id=current){stop();current=id;clean();$('#title').textContent=games[id].name;$('#hint').textContent=games[id].description;$('#question').textContent='Выбери уровень';board.className='levels';
- games[id].levels.forEach((title,i)=>{const result=savedLevel(id,i),unlocked=i===0||!!savedLevel(id,i-1);const b=btn(`${i+1}. ${title}\n${result?'★'.repeat(result.stars)+'☆'.repeat(3-result.stars)+' · '+result.score+' points':unlocked?'Начать':'🔒 Пройди предыдущий уровень'}`,()=>begin(id,i),'level');b.disabled=!unlocked;board.append(b)});
- $('#actions').append(btn('← К витрине',()=>modal.close()));if(!saving)status.textContent='Сохранение недоступно. Прогресс хранится только до закрытия страницы.';
+const dialogues=[
+{cue:'Hello!',ru:'Финн здоровается. Поздоровайся в ответ.',answer:'Hi!',options:['Hi!','Goodbye!','Good night!'],translation:'Привет!'},
+{cue:'Good morning!',ru:'Сейчас утро. Поприветствуй Финна.',answer:'Good morning!',options:['Good evening!','Good morning!','See you!'],translation:'Доброе утро!'},
+{cue:"What is your name?",ru:'Финн спрашивает, как тебя зовут. Представься как Алекс.',answer:'My name is Alex.',options:['I am fine, thank you.','My name is Alex.','Goodbye!'],translation:'Меня зовут Алекс.'},
+{cue:'My name is Finn. Nice to meet you!',ru:'Финн представился. Скажи, что тоже рад знакомству.',answer:'Nice to meet you too!',options:['Good night!','Nice to meet you too!','My name is Finn.'],translation:'Тоже рад знакомству!'},
+{cue:'How are you?',ru:'Финн спрашивает, как дела. Ответь: «Хорошо, спасибо».',answer:'I am fine, thank you.',options:['I am fine, thank you.','See you tomorrow!','Hello!'],translation:'У меня всё хорошо, спасибо.'},
+{cue:'Goodbye, Alex!',ru:'Пора идти домой. Попрощайся с Финном.',answer:'Goodbye, Finn!',options:['Good morning!','My name is Alex.','Goodbye, Finn!'],translation:'До свидания, Финн!'},
+{cue:'See you tomorrow!',ru:'Вы встретитесь завтра. Скажи: «До завтра!»',answer:'See you tomorrow!',options:['Nice to meet you!','See you tomorrow!','How are you?'],translation:'До завтра!'},
+{cue:'Good night!',ru:'Уже поздно, пора спать. Пожелай спокойной ночи.',answer:'Good night!',options:['Good morning!','Good night!','Hi!'],translation:'Спокойной ночи!'}
+];
+const numberWords=['one','two','three','four','five','six','seven','eight','nine','ten'];
+const colors=[['red','#e64946','красный'],['blue','#357cdb','синий'],['yellow','#f5cf43','жёлтый'],['green','#4c9f57','зелёный'],['orange','#f1933c','оранжевый'],['purple','#975dbe','фиолетовый'],['pink','#ed99bc','розовый'],['brown','#906047','коричневый'],['black','#30343d','чёрный'],['white','#ffffff','белый']];
+function shuffle(items){return [...items].sort(()=>Math.random()-.5)}
+let state=null, sound=true, utterance=null, speechId=0, voiceList=[], saved={};
+try{const value=JSON.parse(localStorage.getItem('little-adventures-v2')||'{}');if(value&&typeof value==='object'&&!Array.isArray(value))saved=value}catch{$('#storage-note').textContent='Сохранение недоступно — можно играть без него'}
+function refresh(){for(const key of Object.keys(config)){if(Number.isInteger(saved[key])&&saved[key]>=1&&saved[key]<=3)$('#saved-'+key).textContent='★'.repeat(saved[key])+' Пройдено'}}
+refresh();
+function button(label,fn,cls='answer'){const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=label;b.onclick=fn;return b}
+function stopSpeech(){speechId++;if('speechSynthesis'in window)window.speechSynthesis.cancel();utterance=null}
+function voices(){if('speechSynthesis'in window)voiceList=window.speechSynthesis.getVoices()}
+if('speechSynthesis'in window){voices();window.speechSynthesis.addEventListener('voiceschanged',voices)}
+function speak(text){
+ stopSpeech();const id=speechId;
+ if(!sound){$('#audio-status').textContent='Звук выключен. Включи его кнопкой вверху страницы.';return}
+ if(!('speechSynthesis'in window)){ $('#audio-status').textContent='Этот браузер не поддерживает озвучку. Все задания доступны с текстом.';return }
+ voices();utterance=new SpeechSynthesisUtterance(text);utterance.lang='en-US';utterance.rate=.82;utterance.pitch=1;
+ const english=voiceList.filter(v=>/^en[-_]/i.test(v.lang));utterance.voice=english.find(v=>v.lang==='en-US'&&v.localService)||english.find(v=>v.lang==='en-US')||english[0]||null;
+ $('#audio-status').textContent='Подготовка голоса…';
+ utterance.onstart=()=>{if(id===speechId)$('#audio-status').textContent='Слушай и повторяй'};
+ utterance.onend=()=>{if(id===speechId){$('#audio-status').textContent='Можно послушать ещё раз';utterance=null}};
+ utterance.onerror=e=>{if(id===speechId&&!['canceled','interrupted'].includes(e.error))$('#audio-status').textContent='Не удалось включить голос. Проверь английский голос в настройках браузера и нажми «Послушать» ещё раз.'};
+ window.speechSynthesis.resume();window.speechSynthesis.speak(utterance);
+ setTimeout(()=>{if(id===speechId&&$('#audio-status').textContent==='Подготовка голоса…')$('#audio-status').textContent='Голос не отвечает. Попробуй ещё раз или проверь английский голос в настройках устройства.'},6000);
 }
-function begin(id,level){stop();current=id;clean();state={id,level,score:0,mistakes:0,hints:0,done:0,total:id==='treasure'?4:id==='world'?3:[3,4,6][level],roundErrors:0,hinted:false,locked:false,review:[]};$('#title').textContent=games[id].name;$('#hint').textContent=games[id].description;$('#meter').hidden=false;
- if(id==='treasure'){state.items=shuffle(words[level]);wordRound()}else if(id==='world'){state.items=phrases[level];phraseRound()}else{state.items=shuffle(animals).slice(0,state.total);matchRound()}
- hud();
-}
-function hud(){if(!state)return;$('#meter').hidden=false;$('#meter-label').textContent=`Уровень ${state.level+1} · ${state.done} / ${state.total} · ${state.score} coins`;$('#progress').max=state.total;$('#progress').value=state.done}
-function mistake(message){state.mistakes++;state.roundErrors++;status.textContent=message;hud()}
-function hint(action){if(!state||state.locked)return;if(!state.hinted){state.hints++;state.hinted=true}action()}
-function actions(help){const bar=$('#actions');bar.replaceChildren();bar.append(btn('← Уровни',()=>menu()),btn('↻ Заново',()=>begin(current,state.level)));if(help)bar.append(btn('💡 Подсказка',()=>hint(help)))}
-function resetRound(){board.replaceChildren();board.className='';$('#question').replaceChildren();status.textContent='';state.locked=false;state.roundErrors=0;state.hinted=false}
-function award(){state.score+=Math.max(20,100-state.roundErrors*20-(state.hinted?30:0));state.done++;hud()}
-function nextButton(next){const b=btn(state.done===state.total?'Результат →':'Дальше →',()=>{if(state.done===state.total)finish();else next()},'primary');$('#actions').append(b);b.focus()}
-function wordRound(){resetRound();const item=state.items[state.done];$('#question').append(document.createTextNode(`Find the ${item[0]}`));if('speechSynthesis' in window)$('#question').append(btn('🔊',()=>speak(item[0]),'sound'));
- board.className='word-grid';shuffle(words[state.level]).forEach(choice=>{const b=btn(choice[1],()=>{if(state.locked)return;if(choice[0]===item[0]){state.locked=true;b.classList.add('correct');award();state.review.push(item[0]+' — '+item[2]);status.textContent=`Yes! ${item[0]} — ${item[2]}. Сокровище найдено!`;[...board.children].forEach(c=>c.disabled=true);nextButton(wordRound)}else{b.disabled=true;b.classList.add('wrong');mistake(`${choice[0]} — ${choice[2]}. Ищи ${item[0]}. Попробуй ещё!`) }},'picture');b.setAttribute('aria-label',choice[2]);board.append(b)});
- actions(()=>{status.textContent=`${item[0]} — ${item[2]}. Найди ${item[1]}. С подсказкой награда меньше.`});
-}
-function phraseRound(){resetRound();const item=state.items[state.done],tokens=item[1].split(' '),picked=[];$('#question').textContent=item[0];board.className='phrase-board';const answer=document.createElement('div');answer.className='sentence';answer.setAttribute('aria-label','Твой ответ');const pool=document.createElement('div');pool.className='word-bank';const caption=document.createElement('p');caption.textContent='Нажимай слова по порядку. Пунктуация тоже часть фразы.';board.append(answer,caption,pool);
- const check=btn('Проверить',()=>{if(state.locked||picked.length!==tokens.length)return;const actual=picked.map(p=>p.word).join(' ');if(actual===item[1]){state.locked=true;award();const phrase=item[1].replace(/ ([!?,.])/g,'$1');state.review.push(phrase+' — '+item[0]);status.textContent='Excellent! '+phrase;board.querySelectorAll('button').forEach(b=>b.disabled=true);check.disabled=true;if('speechSynthesis' in window)$('#actions').append(btn('🔊 Послушать',()=>speak(phrase)));nextButton(phraseRound)}else{mistake('Пока не совсем так. Нажми на слова в ответе, чтобы изменить порядок, или возьми подсказку.');answer.classList.add('needs-fix')}},'primary');check.disabled=true;
- function render(){answer.replaceChildren();answer.classList.remove('needs-fix');if(!picked.length){const placeholder=document.createElement('span');placeholder.textContent='Твоя фраза появится здесь';answer.append(placeholder)}picked.forEach((p,index)=>answer.append(btn(p.word,()=>{if(state.locked)return;p.button.disabled=false;picked.splice(index,1);render()},'word-chip')));check.disabled=picked.length!==tokens.length}
- shuffle(tokens.map((word,id)=>({word,id}))).forEach(p=>{const b=btn(p.word,()=>{if(state.locked)return;b.disabled=true;picked.push({word:p.word,button:b});render()},'word-chip');pool.append(b)});render();actions(()=>{status.textContent='Образец: '+item[1].replace(/ ([!?,.])/g,'$1')+'. Собери такую фразу из слов.'});$('#actions').append(check);
-}
-function matchRound(){resetRound();$('#question').textContent='Match the word to the animal';board.className='match-board';const left=document.createElement('div'),right=document.createElement('div');left.className=right.className='match-column';board.append(left,right);let selected=null;const buttons=[];
- shuffle(state.items).forEach(item=>{const b=btn(item[0],()=>{if(state.locked)return;left.querySelectorAll('button').forEach(c=>{c.classList.remove('selected');c.setAttribute('aria-pressed','false')});selected={item,button:b};b.classList.add('selected');b.setAttribute('aria-pressed','true');status.textContent='Теперь выбери картинку справа.';if('speechSynthesis' in window)speak(item[0])},'match-word');b.setAttribute('aria-pressed','false');left.append(b);buttons.push(b)});
- shuffle(state.items).forEach(item=>{const b=btn(item[1],()=>{if(state.locked)return;if(!selected){status.textContent='Сначала выбери английское слово слева.';return}if(item[0]===selected.item[0]){b.disabled=selected.button.disabled=true;b.classList.add('correct');selected.button.classList.add('correct');selected.button.classList.remove('selected');selected.button.setAttribute('aria-pressed','false');award();state.review.push(item[0]+' — '+item[2]);status.textContent=`Great! ${item[0]} — ${item[2]}.`;selected=null;state.roundErrors=0;state.hinted=false;if(state.done===state.total){state.locked=true;nextButton(()=>{})}}else{mistake(`Это ${item[0]} — ${item[2]}. Найди пару для ${selected.item[0]}.`)}},'match-picture');b.setAttribute('aria-label',item[2]);right.append(b);buttons.push(b)});
- actions(()=>{if(!selected){status.textContent='Выбери слово слева, чтобы увидеть его перевод.';state.hints--;state.hinted=false;return}status.textContent=`${selected.item[0]} — ${selected.item[2]} ${selected.item[1]}.`});
-}
-function finish(){const s=state;const penalty=s.mistakes+s.hints,stars=penalty===0?3:penalty<=3?2:1;const previous=savedLevel(current,s.level);progress[current]={...record(current),[s.level]:{stars:Math.max(stars,previous?.stars||0),score:Math.max(s.score,previous?.score||0)}};save();clean();$('#question').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);board.className='results';const title=document.createElement('h3');title.textContent='Level complete!';const detail=document.createElement('p');detail.textContent=`${s.score} coins · Ошибок: ${s.mistakes} · Подсказок: ${s.hints}`;const review=document.createElement('ul');s.review.forEach(text=>{const li=document.createElement('li');li.textContent=text;review.append(li)});board.append(title,detail,review);status.textContent=stars===3?'Отлично! Все задания выполнены без подсказок.':'Уровень пройден! Повтори его без подсказок, чтобы получить три звезды.';if(!saving)status.textContent+=' Сохранение в браузере недоступно.';$('#actions').append(btn('← Уровни',()=>menu()),btn('Повторить',()=>begin(current,s.level)));if(s.level<2)$('#actions').append(btn('Следующий уровень →',()=>begin(current,s.level+1),'primary'));refreshLibrary();state=null;$('#actions button').focus()}
-document.querySelectorAll('[data-game]').forEach(b=>b.onclick=()=>{menu(b.dataset.game);modal.showModal()});$('.close').onclick=()=>modal.close();modal.addEventListener('close',stop);refreshLibrary();
+$('#sound-toggle').onclick=()=>{sound=!sound;$('#sound-toggle').textContent=sound?'♪ Звук включён':'♪ Звук выключен';$('#sound-toggle').setAttribute('aria-pressed',String(sound));if(!sound)stopSpeech()};
+$('#close').onclick=()=>modal.close();
+modal.addEventListener('close',()=>{stopSpeech();state=null;document.body.style.overflow=''});
+$('#restart').onclick=()=>{if(state)start(state.id)};
+document.querySelectorAll('[data-game]').forEach(b=>b.onclick=()=>{start(b.dataset.game);modal.showModal();document.body.style.overflow='hidden'});
+function start(id){stopSpeech();state={id,index:0,mistakes:0,locked:false,order:id==='colors'?shuffle(colors):id==='numbers'?shuffle(numberWords.map((w,i)=>i)):dialogues};
+const c=config[id];modal.className=id;$('#game-title').textContent=c.title;$('#game-topic').textContent=c.topic;$('#hero-name').textContent=c.hero;$('#hero-note').textContent=c.note;$('#restart').hidden=false;render()}
+function render(){stopSpeech();const s=state,c=config[s.id];s.locked=false;$('#board').replaceChildren();$('#actions').replaceChildren();$('#feedback').textContent='';$('#audio-status').textContent='';$('#listen').hidden=false;$('#progress').max=c.total;$('#progress').value=s.index;$('#progress-label').textContent='Задание '+(s.index+1)+' из '+c.total;
+if(s.id==='greetings')renderDialogue();else if(s.id==='numbers')renderNumber();else renderColor()}
+function wrong(message){state.mistakes++;$('#feedback').textContent=message}
+function success(message){state.locked=true;$('#feedback').textContent=message;$('#progress').value=state.index+1;$('#board').querySelectorAll('button').forEach(b=>b.disabled=true);$('#actions').replaceChildren(button(state.index+1===config[state.id].total?'Мой результат →':'Дальше →',()=>{state.index++;if(state.index===config[state.id].total)finish();else render()},'primary'))}
+function renderDialogue(){const item=dialogues[state.index];$('#instruction').textContent=item.ru;$('#question').textContent='Финн: “'+item.cue+'”';$('#listen').onclick=()=>speak(item.cue);
+shuffle(item.options).forEach(option=>{const b=button(option,()=>{if(state.locked)return;speak(option);if(option===item.answer){b.classList.add('correct');success('Отлично! '+item.answer+' — '+item.translation)}else{b.classList.add('wrong');b.disabled=true;wrong('Эта реплика здесь не подходит. Прочитай ситуацию и попробуй ещё.')}});$('#board').append(b)})}
+function renderNumber(){const n=state.order[state.index]+1,word=numberWords[n-1];let count=0;$('#instruction').textContent='Послушай число. Нажимай на звёзды, чтобы зажечь нужное количество. Повторное нажатие убирает звезду.';$('#question').textContent='Collect '+word+' stars';$('#listen').onclick=()=>speak(word);const field=document.createElement('div');field.className='star-field';const counter=document.createElement('div');counter.className='counter';counter.textContent='Собрано: 0';counter.setAttribute('aria-live','polite');
+for(let i=0;i<10;i++){const b=button('★',()=>{if(state.locked)return;const selected=b.getAttribute('aria-pressed')==='true';b.setAttribute('aria-pressed',String(!selected));count+=selected?-1:1;counter.textContent='Собрано: '+count;if(!selected)speak(numberWords[count-1])},'star');b.setAttribute('aria-pressed','false');b.setAttribute('aria-label','Звезда '+(i+1));field.append(b)}
+$('#board').append(field,counter);$('#actions').append(button('Проверить',()=>{if(state.locked)return;if(count===n){speak(word);success('Верно! '+n+' — '+word+'. Отличная коллекция!')}else wrong('Сейчас звёзд: '+count+'. Нужно '+n+' ('+word+'). Добавь или убери звёзды и проверь ещё раз.')},'primary'))}
+function renderColor(){const target=state.order[state.index];let selected=null;$('#instruction').textContent='Послушай название цвета, выбери краску и раскрась цветок.';$('#question').textContent='Paint it '+target[0]+'!';$('#listen').onclick=()=>speak(target[0]);const stage=document.createElement('div');stage.className='flower-stage';stage.innerHTML='<svg viewBox="0 0 300 170" role="img" aria-label="Цветок для раскрашивания"><path d="M150 150V80" stroke="#5b8e56" stroke-width="9" stroke-linecap="round"/><path d="M147 130Q95 131 106 103Q145 98 147 130M154 145Q207 139 196 113Q162 112 154 145" fill="#82ad65"/><g id="petals" fill="#e2e1db" stroke="#a4a99e" stroke-width="2"><ellipse cx="150" cy="42" rx="23" ry="30"/><ellipse cx="181" cy="64" rx="30" ry="23" transform="rotate(-25 181 64)"/><ellipse cx="170" cy="98" rx="23" ry="30" transform="rotate(-30 170 98)"/><ellipse cx="131" cy="98" rx="23" ry="30" transform="rotate(30 131 98)"/><ellipse cx="119" cy="64" rx="30" ry="23" transform="rotate(25 119 64)"/></g><circle cx="150" cy="75" r="19" fill="#f6cc62"/><path d="M143 80Q150 87 157 80" fill="none" stroke="#785c37" stroke-width="2"/><circle cx="144" cy="71" r="2" fill="#785c37"/><circle cx="157" cy="71" r="2" fill="#785c37"/></svg>';
+const palette=document.createElement('div');palette.className='palette';shuffle(colors).forEach(color=>{const b=button('',()=>{if(state.locked)return;selected=color;palette.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');$('#petals').setAttribute('fill',color[1]);speak(color[0]);$('#feedback').textContent='Краска выбрана. Нажми «Раскрасить».'},'swatch');b.style.background=color[1];b.title=color[2];b.setAttribute('aria-label',color[2]);b.setAttribute('aria-pressed','false');palette.append(b)});$('#board').append(stage,palette);$('#actions').append(button('Раскрасить',()=>{if(state.locked)return;if(!selected){$('#feedback').textContent='Сначала выбери краску.';return}if(selected[0]===target[0]){speak(target[0]);success('Красиво! '+target[0]+' — '+target[2]+'.')}else{wrong('Ты выбрал цвет '+selected[2]+'. Нужен '+target[2]+' ('+target[0]+'). Попробуй другую краску.')}},'primary'))}
+function finish(){stopSpeech();const c=config[state.id],stars=state.mistakes===0?3:state.mistakes<=3?2:1;saved[state.id]=Math.max(Number(saved[state.id])||0,stars);try{localStorage.setItem('little-adventures-v2',JSON.stringify(saved))}catch{$('#storage-note').textContent='Сохранение недоступно — результат останется до перезагрузки'}refresh();$('#progress-label').textContent='Пройдено '+c.total+' из '+c.total;$('#instruction').textContent='Приключение завершено';$('#question').textContent='Ты отлично потрудился!';$('#listen').hidden=true;$('#audio-status').textContent='';$('#feedback').textContent='';$('#board').innerHTML='<div class="result"><div class="stars">'+'★'.repeat(stars)+'☆'.repeat(3-stars)+'</div><h3>'+c.total+' открытий!</h3><p>Ошибок: '+state.mistakes+'.<br>Повтори приключение, чтобы лучше запомнить слова.</p></div>';$('#actions').replaceChildren(button('Играть ещё',()=>start(state.id),'primary'),button('К другим героям',()=>modal.close()));state.locked=true}
+
+
+const nameKey='little-adventures-player';
+let playerName='';
+try{playerName=localStorage.getItem(nameKey)||'';if(localStorage.getItem('little-adventures-welcome')==='yes')$('#welcome').hidden=true}catch{}
+$('#player-name').value=playerName;
+function updateTown(){const total=Object.keys(config).reduce((n,id)=>n+(Number.isInteger(saved[id])&&saved[id]>=1&&saved[id]<=3?saved[id]:0),0);$('#total-stars').textContent='★ '+total+' / 9';$('#total-stars').setAttribute('aria-label','Собрано звёзд: '+total+' из 9');$('#town-greeting').textContent=playerName?'С возвращением, '+playerName+'!':'ТВОЙ ГОРОД АНГЛИЙСКОГО'}
+updateTown();
+$('#welcome-form').addEventListener('submit',e=>{e.preventDefault();playerName=$('#player-name').value.trim();try{localStorage.setItem(nameKey,playerName);localStorage.setItem('little-adventures-welcome','yes')}catch{}$('#welcome').hidden=true;updateTown();document.querySelector('[data-game]').focus()});
+if(!$('#welcome').hidden){document.querySelector('header').inert=true;document.querySelector('main').inert=true}
+$('#welcome-form').addEventListener('submit',()=>{document.querySelector('header').inert=false;document.querySelector('main').inert=false;document.querySelector('[data-game]').focus()});
+$('#change-player').onclick=()=>{$('#welcome').hidden=false;document.querySelector('header').inert=true;document.querySelector('main').inert=true;$('#player-name').focus()};
+modal.addEventListener('close',updateTown);
+const celebrateObserver=new MutationObserver(()=>{if(!state||!state.locked||!$('#feedback').textContent)return;document.querySelector('.reward-pop')?.remove();const p=document.createElement('div');p.className='reward-pop';p.setAttribute('aria-hidden','true');p.textContent=state.id==='colors'?'✦ Beautiful!':state.id==='numbers'?'★ Well done!':'✦ Great!';modal.append(p);setTimeout(()=>p.remove(),1150)});
+celebrateObserver.observe($('#feedback'),{childList:true});
+
